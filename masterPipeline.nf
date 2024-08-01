@@ -8,14 +8,17 @@ workflow {
     ref = Channel.fromPath(params.ref)
 
     // Capture both the aligned BAM and BAI files from the align process
-    (sortedBam, indexedBai) = align(ref, reads)
+    (alignedBam, indexedBai, indexedRef) = align(ref, reads)
 
     // Pass the BAM file to the variantCalling process
-    variantCalling(ref, sortedBam)
+    vcf = variantCalling(ref, alignedBam)
+
+    // Pass the VCF and BAM files to the phasing process
+    phasing(ref, alignedBam, vcf)
 }
 
 /*
- * Align reads using minimap2 and sort BAM using samtools
+ * Align reads using minimap2, sort BAM using samtools, and create BAM index
  */
 process align {
     label 'alignment'
@@ -25,15 +28,16 @@ process align {
     path reads
 
     output:
-    path 'aligned.bam'
-    path 'aligned.bam.bai'
+    tuple path('aligned.bam'), path('aligned.bam.bai'), path('ref.bai')
+
 
     script:
     """
     samtools fastq -TMm,M1,MM,ML ${reads} |
     minimap2 -ax map-ont -k 17 -t 30 -y --eqx ${ref} - |
-    samtools sort -@30 -m 4G > aligned.bam
-    samtools index aligned.bam
+    samtools sort -@30 -m 4G -o aligned.bam -
+    samtools index aligned.bam -
+    samtools faidx ${ref}
     """
 }
 
@@ -45,22 +49,21 @@ process variantCalling {
 
     input:
     path ref
-    path sortedBam 
+    path alignedBam 
 
     output:
-    path 'clair3_output'
+    path 'clair3_output.vcf'
 
     script:
     """
-    singularity exec \
+    run_clair3.sh \
     ${baseDir}/clair3_latest.sif \
-    clair3 \
-    --bam_fn=${sortedBam} \
+    --bam_fn=${alignedBam} \
     --ref_fn=${ref} \
     --threads=20 \
     --platform="ont" \
     --model_path="/opt/models/ont" \
-    --output=clair3_output \
+    --output=clair3_output.vcf \
     --enable_phasing \
     --longphase_for_phasing
     """
@@ -74,15 +77,15 @@ process phasing {
 
     input:
     path ref
-    path phased_vcf
-    path normal_bam
-    path tumor_bam
+    path alignedBam
+    path 'clair3_output.vcf'
 
     output:
-    path 'haplotagged'
+    path 'haplotagged.vcf'
 
     script:
     """
-    whatshap haplotag --reference $ref $phased_vcf $normal_bam
+    whatshap haplotag --reference ${ref} clair3_output.vcf aligned.bam -o haplotagged.vcf
+
     """
 }
