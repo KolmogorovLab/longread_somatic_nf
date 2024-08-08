@@ -5,10 +5,9 @@
 #SBATCH --time=24:00:00 
 #SBATCH --cpus-per-task=40
 #SBATCH --mem=70G 
-#SBATCH --partition=standard 
+ 
 
-#Load modules 
-module load java 
+#Load module 
 module load nextflow 
 
 # Run Nextflow pipeline
