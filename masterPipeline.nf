@@ -4,17 +4,18 @@
  * Define the workflow
  */
 workflow {
+    // Create channels for reads and reference
     reads = Channel.fromPath(params.reads)
     ref = Channel.fromPath(params.ref)
 
-    // Capture both the aligned BAM and BAI files from the align process
+    // Alignment
     (alignedBam, indexedBai, indexedRef) = align(ref, reads)
 
-    // Pass the BAM file to the variantCalling process
-    vcf = variantCalling(ref, alignedBam)
+    // Pass the BAM file, BAI file, and reference index to the variantCalling process
+    (vcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
 
-    // Pass the VCF and BAM files to the phasing process
-    phasing(ref, alignedBam, vcf)
+    // Haplotagging
+    haplotaggedVcf = phasing(ref, alignedBam, vcf)
 }
 
 /*
@@ -28,42 +29,46 @@ process align {
     path reads
 
     output:
-    tuple path('aligned.bam'), path('aligned.bam.bai'), path('ref.bai')
-
-
+    path 'aligned.bam'
+    path 'aligned.bam.bai'
+    path "${ref}.fai"
+          
     script:
-    """
+    """  
     samtools fastq -TMm,M1,MM,ML ${reads} |
     minimap2 -ax map-ont -k 17 -t 30 -y --eqx ${ref} - |
     samtools sort -@30 -m 4G -o aligned.bam -
-    samtools index aligned.bam -
+    samtools index aligned.bam
     samtools faidx ${ref}
     """
-}
-
+}   
+    
 /*
- * Process to run Clair3
- */
+ * Process to run Clair3 
+ */ 
 process variantCalling {
     label 'variantCalling'
 
     input:
     path ref
-    path alignedBam 
+    path alignedBam
+    path indexedBai
+    path indexedRef	
 
     output:
-    path 'clair3_output.vcf'
+    path 'clair3_output.vcf/merge_output.vcf.gz'
+    path 'clair3_output.vcf/merge_output.vcf.gz.tbi'
 
     script:
     """
     run_clair3.sh \
     ${baseDir}/clair3_latest.sif \
     --bam_fn=${alignedBam} \
-    --ref_fn=${ref} \
+    --ref_fn=${indexedRef} \
     --threads=20 \
     --platform="ont" \
     --model_path="/opt/models/ont" \
-    --output=clair3_output.vcf \
+    --output=clair3_output \
     --enable_phasing \
     --longphase_for_phasing
     """
@@ -76,16 +81,16 @@ process phasing {
     label 'phasing'
 
     input:
-    path ref
+    path indexedRef
     path alignedBam
-    path 'clair3_output.vcf'
+    path vcf
 
     output:
     path 'haplotagged.vcf'
 
     script:
     """
-    whatshap haplotag --reference ${ref} clair3_output.vcf aligned.bam -o haplotagged.vcf
-
+    whatshap haplotag --reference ${indexedRef} "${vcf}/merge_output.vcf.gz" aligned.bam -o haplotagged.vcf
     """
 }
+
