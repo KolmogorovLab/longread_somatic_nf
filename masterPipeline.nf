@@ -15,7 +15,7 @@ workflow {
     (vcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
 
     // Haplotagging
-    haplotaggedVcf = phasing(ref, alignedBam, vcf)
+    haplotaggedVcf = phasing(indexedRef, alignedBam, vcf, vcfIndex)
 }
 
 /*
@@ -84,6 +84,7 @@ process phasing {
     path indexedRef
     path alignedBam
     path vcf
+    path vcfIndex
 
     output:
     path 'haplotagged.vcf'
