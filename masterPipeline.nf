@@ -56,8 +56,8 @@ process variantCalling {
     path indexedRef	
 
     output:
-    path 'clair3_output.vcf/merge_output.vcf.gz'
-    path 'clair3_output.vcf/merge_output.vcf.gz.tbi'
+    path 'clair3_output.vcf/pileup.vcf.gz'
+    path 'clair3_output.vcf/pileup.vcf.gz.tbi'
 
     script:
     """
@@ -91,7 +91,7 @@ process phasing {
 
     script:
     """
-    whatshap haplotag --reference ${indexedRef} "${vcf}/merge_output.vcf.gz" aligned.bam -o haplotagged.vcf
+    whatshap haplotag --reference ${indexedRef} ${vcf} aligned.bam -o haplotagged.vcf
     """
 }
 
