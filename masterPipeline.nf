@@ -15,7 +15,7 @@ workflow {
     (vcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
 
     // Haplotagging
-    haplotaggedVcf = phasing(indexedRef, alignedBam, vcf, vcfIndex)
+    haplotaggedVcf = phasing(ref, indexedRef, vcf, alignedBam, indexedBai, vcfIndex)
 }
 
 /*
@@ -56,8 +56,8 @@ process variantCalling {
     path indexedRef	
 
     output:
-    path 'clair3_output.vcf/pileup.vcf.gz'
-    path 'clair3_output.vcf/pileup.vcf.gz.tbi'
+    path 'clair3_output/pileup.vcf.gz'
+    path 'clair3_output/pileup.vcf.gz.tbi'
 
     script:
     """
@@ -68,7 +68,7 @@ process variantCalling {
     --threads=20 \
     --platform="ont" \
     --model_path="/opt/models/ont" \
-    --output=clair3_output \
+    --output="clair3_output" \
     --enable_phasing \
     --longphase_for_phasing
     """
@@ -81,9 +81,11 @@ process phasing {
     label 'phasing'
 
     input:
+    path ref
     path indexedRef
-    path alignedBam
     path vcf
+    path alignedBam
+    path indexedBai
     path vcfIndex
 
     output:
@@ -91,7 +93,7 @@ process phasing {
 
     script:
     """
-    whatshap haplotag --reference ${indexedRef} ${vcf} aligned.bam -o haplotagged.vcf
+    whatshap haplotag -o haplotagged.vcf --reference ${ref} --ignore-read-groups 'pileup.vcf.gz' 'aligned.bam'
     """
 }
 
