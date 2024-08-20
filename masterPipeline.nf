@@ -16,6 +16,10 @@ workflow {
 
     // Haplotagging
     haplotaggedVcf = phasing(ref, indexedRef, vcf, alignedBam, indexedBai, vcfIndex)
+
+    // Run Severus on the phased data
+
+    runSeverus(haplotaggedVcf, alignedBam, indexedBai)
 }
 
 /*
@@ -97,3 +101,35 @@ process phasing {
     """
 }
 
+/*
+
+* Process to run Severus
+
+*/
+
+process runSeverus {
+    label 'severus'
+ 
+    input:
+    path haplotaggedVcf
+    path alignedBam
+    path indexedBai
+
+    output:
+    path 'severus_out/*'
+
+    script:
+    """
+    # Install Severus if not already installed
+    if ! conda list -n severus_env | grep -q "severus"; then
+    conda create -n severus_env 
+
+    # Activate the environment and run Severus
+    conda activate severus_env
+
+    # Single Sample SV Calling
+    severus --target-bam ${alignedBam} --out-dir severus_out -t 16 --phasing-vcf ${haplotaggedVcf} \
+    --vntr-bed ./vntrs/human_GRCh38_no_alt_analysis_set.trf.bed
+    """
+
+}
