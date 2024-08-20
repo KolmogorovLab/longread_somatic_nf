@@ -32,9 +32,9 @@ sudo mv nextflow /usr/local/bin
   
 6. Confirm that Nextflow is installed correctly:
 
-'''
+```
 nextflow info 
-'''
+```
    
 # Running Nextflow Pipeline
 
