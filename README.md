@@ -39,8 +39,12 @@ nextflow info
 ```
    
 # Running Nextflow Pipeline
-
-
+The following files located in this repository are **required** to run the Long-Read Analysis Pipeline: 
+1. Either method below to run the pipeline
+  - `masterPipeline.nf` to run the pipeline directly through nextflow
+  - 'slurmPipeline.sh' to run the nextflow pipeline through slurm
+2. Configuration file with established parameters, environment and container configurations
+  - `nextflow.config` 
 
 
 ### Citations
