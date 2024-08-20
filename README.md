@@ -37,8 +37,12 @@ sudo mv nextflow /usr/local/bin
 ```
 nextflow info 
 ```
-   
-# Running Nextflow Pipeline
+
+## Inputs and Parameters
+The current version of the pipeline takes tumor-only long-read cell lines in bam format. The `nextflow.config` file specifies the path of the `reads` as well as the path of the reference fasta genome, labeled as `ref`. These two parameters are **required** and must be updated with the proper paths of the input long-reads and reference file. 
+
+
+## Running Nextflow Pipeline
 The following files located in this repository are **required** to run the Long-Read Analysis Pipeline: 
 1. Either method below to run the pipeline
     - `masterPipeline.nf` to run the pipeline directly through nextflow
