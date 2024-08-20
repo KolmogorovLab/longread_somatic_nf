@@ -39,13 +39,11 @@ nextflow info
 ```
 
 ## Inputs and Parameters
-The current version of the pipeline takes tumor-only long-read cell lines in bam format. The `nextflow.config` file specifies the path of the `reads` as well as the path of the reference fasta genome, labeled as `ref`. These two parameters are **required** and must be updated with the proper paths of the input long-reads and reference file. The current configuration file shows the following:
+The current version of the pipeline takes tumor-only long-read cell lines in bam format. The parameters of these `reads` and the reference file, `ref` are **required** parameters that must be specified at the command line. An example of the how the nextflow script can be run at the command line is below. 
 
 ```
-params {
-    reads = "/data/KolmogorovLab/julieZelaya/LongReadCancerPipeline/HCC1954.chr22.bam"
-    ref = "/data/KolmogorovLab/references/grch38_chr.fasta"
-}
+nextflow run masterPipeline.nf --reads reads.bam --ref reference.fasta
+
 ```
 
 ## Running Nextflow Pipeline
