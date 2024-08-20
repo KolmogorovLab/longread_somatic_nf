@@ -32,3 +32,9 @@ It will download the 'nextflow' application launcher in your working directory.
    
 # Running Nextflow Pipeline
 
+
+
+
+### Citations
+P. Di Tommaso, et al. Nextflow enables reproducible computational workflows. Nature Biotechnology 35, 316–319 (2017) doi:10.1038/nbt.3820
+
