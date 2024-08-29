@@ -10,11 +10,12 @@ workflow tumorOnlyWorkflow {
 
     main:
         (alignedBam, indexedBai, indexedRef) = align(ref, reads)
-        (vcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
-        haplotaggedVcf = haplotag_bam(ref, indexedRef, vcf, alignedBam, indexedBai, vcfIndex)
+        (phasedVcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
+        haplotaggedVcf = haplotag_bam(ref, indexedRef, phasedVcf, alignedBam, indexedBai, vcfIndex)
 
     emit:
         alignedBam
+        phasedVcf
         haplotaggedVcf
 }
 
@@ -37,9 +38,9 @@ process align {
         path reads
 
     output:
-        path 'aligned.bam'
-        path 'aligned.bam.bai'
-        path "${ref}.fai"
+        path 'aligned.bam', emit: alignment
+        path 'aligned.bam.bai', emit: alignment_index
+        path "${ref}.fai", emit: reference_index
           
     script:
         """  
@@ -72,16 +73,15 @@ process variantCalling {
     
     script:
         """
-        run_clair3.sh \
-        ${baseDir}/clair3_latest.sif \
-        --bam_fn=${alignedBam} \
-        --ref_fn=${indexedRef} \
-        --threads=20 \
-        --platform="ont" \
-        --model_path="/opt/models/ont" \
-        --output="clair3_output" \
-        --enable_phasing \
-        --longphase_for_phasing
+        /opt/bin/run_clair3.sh \
+            --bam_fn=${alignedBam} \
+            --ref_fn=${indexedRef} \
+            --threads=20 \
+            --platform="ont" \
+            --model_path="/opt/models/ont" \
+            --output="clair3_output" \
+            --enable_phasing \
+            --longphase_for_phasing
         """
 }
 
@@ -104,11 +104,12 @@ process haplotag_bam {
         path vcfIndex
 
     output:
-        path 'haplotagged.vcf'
+        path 'haplotagged.bam'
 
     script:
         """
-        whatshap haplotag -o haplotagged.vcf --reference ${ref} --ignore-read-groups 'pileup.vcf.gz' 'aligned.bam'
+        whatshap haplotag --reference ${ref} ${vcf} ${alignedBam} -o 'haplotagged.bam' --ignore-read-groups \
+            --tag-supplementary --skip-missing-contigs --output-threads 4
         """
 }
 
