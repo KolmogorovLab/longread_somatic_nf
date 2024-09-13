@@ -51,7 +51,7 @@ output {
  * Align reads using minimap2, sort BAM using samtools, and create BAM index
  */
 process alignMinimap2 {
-    def threads = 56
+    def threads = 28
 
     container 'docker://quay.io/jmonlong/minimap2_samtools:v2.24_v1.16.1'
     cpus threads
@@ -79,7 +79,7 @@ process alignMinimap2 {
  * Process to run Clair3 
  */ 
 process callClair3 {
-    def threads = 56
+    def threads = 28
 
     container 'docker://hkubal/clair3:v1.0.10'
     cpus threads
