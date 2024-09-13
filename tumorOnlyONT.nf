@@ -15,7 +15,7 @@ workflow tumorOnlyWorkflow {
         alignMinimap2(reference, reads)
         callClair3(reference, alignMinimap2.out.bam, alignMinimap2.out.bam_idx, alignMinimap2.out.ref_idx)
         haplotagWhatshap(reference, alignMinimap2.out.ref_idx, callClair3.out.vcf, alignMinimap2.out.bam, 
-                         alignMinimap2.out.bam_idx, callClair3.out.vcf_idx)
+                         alignMinimap2.out.bam_idx)
 
     emit:
         phasedVcf = callClair3.out.vcf
@@ -51,10 +51,11 @@ output {
  * Align reads using minimap2, sort BAM using samtools, and create BAM index
  */
 process alignMinimap2 {
-    label 'alignMinimap2'
+    def threads = 56
+
     container 'docker://quay.io/jmonlong/minimap2_samtools:v2.24_v1.16.1'
-    cpus 28
-    memory '64 GB'
+    cpus threads
+    memory '128 GB'
     time '24.h'
 
     input:
@@ -68,7 +69,7 @@ process alignMinimap2 {
           
     script:
         """  
-        samtools fastq -TMm,Ml,MM,ML ${reads} | minimap2 -ax map-ont -k 17 -t 30 -y --eqx ${ref} - | samtools sort -@4 -m 4G > aligned.bam
+        samtools fastq -TMm,Ml,MM,ML ${reads} | minimap2 -ax map-ont -k 17 -t ${threads} -y --eqx ${ref} - | samtools sort -@4 -m 4G > aligned.bam
         samtools index -@8 aligned.bam
         samtools faidx ${ref}
         """
@@ -78,10 +79,11 @@ process alignMinimap2 {
  * Process to run Clair3 
  */ 
 process callClair3 {
-    label 'variantCalling'
+    def threads = 56
+
     container 'docker://hkubal/clair3:v1.0.10'
-    cpus 28
-    memory '64 G'
+    cpus threads
+    memory '128 G'
     time '24.h'
 
     input:
@@ -99,7 +101,7 @@ process callClair3 {
         /opt/bin/run_clair3.sh \
             --bam_fn=${alignedBam} \
             --ref_fn=${indexedRef} \
-            --threads=20 \
+            --threads=${threads} \
             --platform="ont" \
             --model_path="/opt/models/ont" \
             --output="clair3_output" \
@@ -112,9 +114,8 @@ process callClair3 {
  * Process to run Whatshap
  */
 process haplotagWhatshap {
-    label 'haplotag_bam'
     container 'docker://quay.io/biocontainers/whatshap:2.3--py310h84f13bb_2'
-    cpus 10
+    cpus 8
     memory '64 G'
     time '10.h'
 
@@ -124,13 +125,13 @@ process haplotagWhatshap {
         path vcf
         path alignedBam
         path indexedBai
-        path vcfIndex
 
     output:
         path 'haplotagged.bam', emit: bam
 
     script:
         """
+        tabix -@4 ${vcf}
         whatshap haplotag --reference ${ref} ${vcf} ${alignedBam} -o 'haplotagged.bam' --ignore-read-groups \
             --tag-supplementary --skip-missing-contigs --output-threads 4
         """
