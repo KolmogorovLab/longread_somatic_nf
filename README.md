@@ -54,6 +54,8 @@ The following files located in this repository are **required** to run the Long-
 2. Configuration file with established parameters, environment and container configurations
    - `nextflow.config` 
 
+## Nextflow introduction
+https://training.nextflow.io/
 
 ### Citations
 P. Di Tommaso, et al. Nextflow enables reproducible computational workflows. Nature Biotechnology 35, 316–319 (2017) doi:10.1038/nbt.3820

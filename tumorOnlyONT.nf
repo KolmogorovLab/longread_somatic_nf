@@ -1,36 +1,60 @@
 #!/usr/bin/env nextflow
 
+nextflow.enable.dsl = 2
+nextflow.preview.output = true
+
 /*
- * Define the workflow
+ * Main workflow
  */
 workflow tumorOnlyWorkflow {
     take:
         reads
-        ref
+        reference
 
     main:
-        (alignedBam, indexedBai, indexedRef) = align(ref, reads)
-        (phasedVcf, vcfIndex) = variantCalling(ref, alignedBam, indexedBai, indexedRef)
-        haplotaggedVcf = haplotag_bam(ref, indexedRef, phasedVcf, alignedBam, indexedBai, vcfIndex)
+        alignMinimap2(reference, reads)
+        callClair3(reference, alignMinimap2.out.bam, alignMinimap2.out.bam_idx, alignMinimap2.out.ref_idx)
+        haplotagWhatshap(reference, alignMinimap2.out.ref_idx, callClair3.out.vcf, alignMinimap2.out.bam, 
+                         alignMinimap2.out.bam_idx, callClair3.out.vcf_idx)
 
     emit:
-        alignedBam
-        phasedVcf
-        haplotaggedVcf
+        phasedVcf = callClair3.out.vcf
+        haplotaggedBam = haplotagWhatshap.out.bam
+
+    publish:
+        phasedVcf >> "phased_vcf"
+        haplotaggedBam >> "haplotagged_bam"
 }
 
+/*
+ * Entry point
+ */
 workflow {
-    tumorOnlyWorkflow(channel.from(params.reads), channel.from(params.ref))
+    if (!params.reads || !params.reference || !params.outdir) {
+        error """
+              ERROR: Some required arguments are not defined.
+              Usage: tumorOnlyONT.nf --reads PATH --reference PATH --outdir PATH
+              """.stripIndent()
+    }
+
+    tumorOnlyWorkflow(channel.from(params.reads), channel.from(params.reference))
 }
+
+output {
+    directory params.outdir
+    mode "copy"
+}
+
+//--- Individual processes description ---
 
 /*
  * Align reads using minimap2, sort BAM using samtools, and create BAM index
  */
-process align {
-    label 'alignment'
+process alignMinimap2 {
+    label 'alignMinimap2'
     container 'docker://quay.io/jmonlong/minimap2_samtools:v2.24_v1.16.1'
-    cpus 30
-    memory '120 GB'
+    cpus 28
+    memory '64 GB'
     time '24.h'
 
     input:
@@ -38,9 +62,9 @@ process align {
         path reads
 
     output:
-        path 'aligned.bam', emit: alignment
-        path 'aligned.bam.bai', emit: alignment_index
-        path "${ref}.fai", emit: reference_index
+        path 'aligned.bam', emit: bam
+        path 'aligned.bam.bai', emit: bam_idx
+        path "${ref}.fai", emit: ref_idx
           
     script:
         """  
@@ -53,11 +77,11 @@ process align {
 /*
  * Process to run Clair3 
  */ 
-process variantCalling {
+process callClair3 {
     label 'variantCalling'
     container 'docker://hkubal/clair3:v1.0.10'
-    cpus 30
-    memory '120 G'
+    cpus 28
+    memory '64 G'
     time '24.h'
 
     input:
@@ -67,8 +91,7 @@ process variantCalling {
         path indexedRef 
 
     output:
-        path 'clair3_output/pileup.vcf.gz'
-        path 'clair3_output/pileup.vcf.gz.tbi'
+        path 'clair3_output/merge_output.vcf.gz', emit: vcf
 
     
     script:
@@ -88,7 +111,7 @@ process variantCalling {
 /*
  * Process to run Whatshap
  */
-process haplotag_bam {
+process haplotagWhatshap {
     label 'haplotag_bam'
     container 'docker://quay.io/biocontainers/whatshap:2.3--py310h84f13bb_2'
     cpus 10
@@ -104,7 +127,7 @@ process haplotag_bam {
         path vcfIndex
 
     output:
-        path 'haplotagged.bam'
+        path 'haplotagged.bam', emit: bam
 
     script:
         """
