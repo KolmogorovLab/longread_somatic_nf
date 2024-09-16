@@ -13,7 +13,7 @@ workflow tumorOnlyWorkflow {
 
     main:
         alignMinimap2(reference, reads)
-        callClair3(reference, alignMinimap2.out.bam, alignMinimap2.out.bam_idx, alignMinimap2.out.ref_idx)
+        callClair3(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, alignMinimap2.out.ref_idx)
         haplotagWhatshap(reference, alignMinimap2.out.ref_idx, callClair3.out.vcf, alignMinimap2.out.bam, 
                          alignMinimap2.out.bam_idx)
 
@@ -87,10 +87,10 @@ process callClair3 {
     time '24.h'
 
     input:
-        path ref
         path alignedBam
         path indexedBai
-        path indexedRef 
+        path reference
+        path referenceIdx
 
     output:
         path 'clair3_output/merge_output.vcf.gz', emit: vcf
@@ -100,7 +100,7 @@ process callClair3 {
         """
         /opt/bin/run_clair3.sh \
             --bam_fn=${alignedBam} \
-            --ref_fn=${indexedRef} \
+            --ref_fn=${reference} \
             --threads=${threads} \
             --platform="ont" \
             --model_path="/opt/models/ont" \
@@ -120,9 +120,9 @@ process haplotagWhatshap {
     time '10.h'
 
     input:
-        path ref
-        path indexedRef
-        path vcf
+        path reference
+        path referenceIdx
+        path phasedVcf
         path alignedBam
         path indexedBai
 
@@ -131,8 +131,8 @@ process haplotagWhatshap {
 
     script:
         """
-        tabix -@4 ${vcf}
-        whatshap haplotag --reference ${ref} ${vcf} ${alignedBam} -o 'haplotagged.bam' --ignore-read-groups \
+        tabix -@4 ${phasedVcf}
+        whatshap haplotag --reference ${reference} ${phasedVcf} ${alignedBam} -o 'haplotagged.bam' --ignore-read-groups \
             --tag-supplementary --skip-missing-contigs --output-threads 4
         """
 }
