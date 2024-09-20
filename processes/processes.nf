@@ -133,7 +133,35 @@ process severusTumorOnly {
 
     script:
         """
+        tabix ${phasedVcf}
         severus --target-bam ${tumorBam} --out-dir severus_out -t ${threads} --phasing-vcf ${phasedVcf} \
             --vntr-bed ${vntrBed} --PON ${panelOfNormals}
+        """
+}
+
+process severusTumorNormal {
+    def threads = 28
+
+    container 'docker://mkolmogo/severus:dev1.2'
+    cpus threads
+    memory '128 G'
+    time '8.h'
+
+    input:
+        path tumorBam, stageAs: "tumor.bam"
+        path tumorBamIdx, stageAs: "tumor.bam.bai"
+        path normalBam, stageAs: "normal.bam"
+        path normalBamIdx, stageAs: "normal.bam.bai"
+        path phasedVcf
+        path vntrBed
+
+    output:
+        path 'severus_out/somatic_SVs/severus_somatic.vcf', emit: severusSomaticVcf
+
+    script:
+        """
+        tabix ${phasedVcf}
+        severus --target-bam ${tumorBam} --control-bam ${normalBam} --out-dir severus_out -t ${threads} --phasing-vcf ${phasedVcf} \
+            --vntr-bed ${vntrBed}
         """
 }
