@@ -10,34 +10,47 @@ workflow tumorOnlyWorkflow {
     take:
         reads
         reference
+        vntrAnnotation
+        svPanelOfNormals
+        clair3Model
 
     main:
         alignMinimap2(reference, reads)
-        callClair3(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, alignMinimap2.out.ref_idx)
-        haplotagWhatshap(reference, alignMinimap2.out.ref_idx, callClair3.out.vcf, alignMinimap2.out.bam, 
+        callClair3(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, alignMinimap2.out.ref_idx, clair3Model)
+        phaseLongphase(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, 
+                       alignMinimap2.out.ref_idx, callClair3.out.vcf)
+        haplotagWhatshap(reference, alignMinimap2.out.ref_idx, phaseLongphase.out.phasedVcf, alignMinimap2.out.bam, 
                          alignMinimap2.out.bam_idx)
+        severusTumorOnly(haplotagWhatshap.out.bam, haplotagWhatshap.out.bam_idx, callClair3.out.vcf, 
+                         vntrAnnotation, svPanelOfNormals)
 
     emit:
         phasedVcf = callClair3.out.vcf
         haplotaggedBam = haplotagWhatshap.out.bam
+        severusSomaticVcf = severusTumorOnly.out.severusSomaticVcf
 
     publish:
         phasedVcf >> "phased_vcf"
         haplotaggedBam >> "haplotagged_bam"
+        severusSomaticVcf >> "severus"
 }
 
 /*
  * Entry point
  */
 workflow {
-    if (!params.reads || !params.reference || !params.outdir) {
+    if (!params.reads || !params.reference || !params.outdir || 
+        !params.vntr || !params.sv_pon || !params.clair3_model) {
         error """
               ERROR: Some required arguments are not defined.
-              Usage: tumorOnlyONT.nf --reads PATH --reference PATH --outdir PATH
+              Usage: tumorOnlyONT.nf --reads PATH --reference PATH --outdir PATH 
+                                     --vntr PATH --sv_pon PATH --clair3_model PATH
               """.stripIndent()
     }
 
-    tumorOnlyWorkflow(channel.from(params.reads), channel.from(params.reference))
+    tumorOnlyWorkflow(Channel.fromPath(params.reads), Channel.fromPath(params.reference), 
+                      Channel.fromPath(params.vntr), Channel.fromPath(params.sv_pon),
+                      Channel.fromPath(params.clair3_model))
 }
 
 output {
@@ -75,9 +88,6 @@ process alignMinimap2 {
         """
 }   
     
-/*
- * Process to run Clair3 
- */ 
 process callClair3 {
     def threads = 28
 
@@ -91,6 +101,7 @@ process callClair3 {
         path indexedBai
         path reference
         path referenceIdx
+        path modelPath
 
     output:
         path 'clair3_output/merge_output.vcf.gz', emit: vcf
@@ -103,18 +114,39 @@ process callClair3 {
             --ref_fn=${reference} \
             --threads=${threads} \
             --platform="ont" \
-            --model_path="/opt/models/ont" \
+            --model_path=${modelPath} \
             --output="clair3_output" \
-            --enable_phasing \
-            --longphase_for_phasing
         """
 }
 
-/*
- * Process to run Whatshap
- */
+process phaseLongphase {
+    def threads = 10
+
+    container 'docker://mkolmogo/longphase:1.7.3'
+    cpus threads
+    memory '64 G'
+    time '4.h'
+
+    input:
+        path alignedBam
+        path indexedBai
+        path reference
+        path referenceIdx
+        path vcf
+
+    output:
+        path 'longphase.vcf.gz', emit: phasedVcf
+
+    
+    script:
+        """
+        longphase phase -s ${vcf} -b ${alignedBam} -r ${reference} -t ${threads} -o longphase --ont
+        bgzip longphase.vcf
+        """
+}
+
 process haplotagWhatshap {
-    container 'docker://quay.io/biocontainers/whatshap:2.3--py310h84f13bb_2'
+    container 'docker://mkolmogo/whatshap:2.3'
     cpus 8
     memory '64 G'
     time '10.h'
@@ -128,12 +160,38 @@ process haplotagWhatshap {
 
     output:
         path 'haplotagged.bam', emit: bam
+        path 'haplotagged.bam.bai', emit: bam_idx
 
     script:
         """
-        tabix -@4 ${phasedVcf}
+        tabix ${phasedVcf}
         whatshap haplotag --reference ${reference} ${phasedVcf} ${alignedBam} -o 'haplotagged.bam' --ignore-read-groups \
             --tag-supplementary --skip-missing-contigs --output-threads 4
+        samtools index -@8 haplotagged.bam
         """
 }
 
+process severusTumorOnly {
+    def threads = 28
+
+    container 'docker://mkolmogo/severus:dev1.2'
+    cpus threads
+    memory '128 G'
+    time '8.h'
+
+    input:
+        path tumorBam
+        path tumorBamIdx
+        path phasedVcf
+        path vntrBed
+        path panelOfNormals
+
+    output:
+        path 'severus_out/somatic_SVs/severus_somatic.vcf', emit: severusSomaticVcf
+
+    script:
+        """
+        severus --target-bam ${tumorBam} --out-dir severus_out -t ${threads} --phasing-vcf ${phasedVcf} \
+            --vntr-bed ${vntrBed} --PON ${panelOfNormals}
+        """
+}
