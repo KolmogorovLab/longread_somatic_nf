@@ -24,7 +24,7 @@ workflow tumorOnlyOntWorkflow {
                        alignMinimap2.out.ref_idx, callClair3.out.vcf)
         haplotagWhatshap(reference, alignMinimap2.out.ref_idx, phaseLongphase.out.phasedVcf, alignMinimap2.out.bam, 
                          alignMinimap2.out.bam_idx)
-        severusTumorOnly(haplotagWhatshap.out.bam, haplotagWhatshap.out.bam_idx, callClair3.out.vcf, 
+        severusTumorOnly(haplotagWhatshap.out.bam, haplotagWhatshap.out.bam_idx, phaseLongphase.out.phasedVcf, 
                          vntrAnnotation, svPanelOfNormals)
 
     emit:

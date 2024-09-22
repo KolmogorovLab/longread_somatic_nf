@@ -32,7 +32,7 @@ workflow tumorNormalOntWorkflow {
                       alignTumor.out.bam_idx)
         severusTumorNormal(haplotagTumor.out.bam, haplotagTumor.out.bam_idx, 
                            haplotagNormal.out.bam, haplotagNormal.out.bam_idx,
-                           callClair3.out.vcf, vntrAnnotation)
+                           phaseLongphase.out.phasedVcf, vntrAnnotation)
 
     emit:
         phasedVcf = callClair3.out.vcf
