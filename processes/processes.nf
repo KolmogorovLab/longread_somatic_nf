@@ -172,12 +172,12 @@ process severusTumorNormal {
 }
 
 process wakhanTumorOnly {
-    def threads = 8
+    def threads = 16
     def genomeName = "Sample"
 
     container 'docker://mkolmogo/wakhan:dev_e3c495f'
     cpus threads
-    memory '32 G'
+    memory '64 G'
     time '4.h'
 
     input:
@@ -199,12 +199,12 @@ process wakhanTumorOnly {
 }
 
 process wakhanTumorNormal {
-    def threads = 8
+    def threads = 16
     def genomeName = "Sample"
 
     container 'docker://mkolmogo/wakhan:dev_e3c495f'
     cpus threads
-    memory '32 G'
+    memory '64 G'
     time '4.h'
 
     input:
