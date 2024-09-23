@@ -24,7 +24,10 @@ process alignMinimap2 {
           
     script:
         """  
-        samtools fastq -TMm,Ml,MM,ML ${reads} | minimap2 -ax map-ont -k 17 -t ${threads} -y --eqx ${ref} - | samtools sort -@4 -m 4G > aligned.bam
+        samtools cat ${reads} | \
+          samtools fastq -TMm,Ml,MM,ML - | \
+          minimap2 -ax map-ont -k 17 -t ${threads} -K 1G -y --eqx ${ref} - | \
+          samtools sort -@4 -m 4G > aligned.bam
         samtools index -@8 aligned.bam
         samtools faidx ${ref}
         """

@@ -18,7 +18,7 @@ workflow tumorOnlyOntWorkflow {
         clair3Model
 
     main:
-        alignMinimap2(reference, reads)
+        alignMinimap2(reference, reads.collect())
         callClair3(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, alignMinimap2.out.ref_idx, clair3Model)
         phaseLongphase(alignMinimap2.out.bam, alignMinimap2.out.bam_idx, reference, 
                        alignMinimap2.out.ref_idx, callClair3.out.vcf)
@@ -51,9 +51,14 @@ workflow {
               """.stripIndent()
     }
 
-    tumorOnlyOntWorkflow(Channel.fromPath(params.reads), Channel.fromPath(params.reference), 
-                         Channel.fromPath(params.vntr), Channel.fromPath(params.sv_pon),
-                         Channel.fromPath(params.clair3_model))
+    readsChannel = Channel.fromPath(params.reads.split(" ").toList(), checkIfExists: true)
+    readsChannel.collect().view{it -> "Input read files: $it"}
+
+    tumorOnlyOntWorkflow(readsChannel, 
+                         Channel.fromPath(params.reference, checkIfExists: true), 
+                         Channel.fromPath(params.vntr, checkIfExists: true), 
+                         Channel.fromPath(params.sv_pon, checkIfExists: true),
+                         Channel.fromPath(params.clair3_model, checkIfExists: true))
 }
 
 output {

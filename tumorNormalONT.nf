@@ -21,8 +21,8 @@ workflow tumorNormalOntWorkflow {
         clair3Model
 
     main:
-        alignTumor(reference, readsTumor)
-        alignNormal(reference, readsNormal)
+        alignTumor(reference, readsTumor.collect())
+        alignNormal(reference, readsNormal.collect())
         callClair3(alignNormal.out.bam, alignNormal.out.bam_idx, reference, alignNormal.out.ref_idx, clair3Model)
         phaseLongphase(alignNormal.out.bam, alignNormal.out.bam_idx, reference, 
                        alignNormal.out.ref_idx, callClair3.out.vcf)
@@ -38,7 +38,7 @@ workflow tumorNormalOntWorkflow {
         phasedVcf = callClair3.out.vcf
         haplotaggedTumor = haplotagTumor.out.bam
         haplotaggedNormal = haplotagNormal.out.bam
-        severusFullOutput = severusTumorOnly.out.severusFullOutput
+        severusFullOutput = severusTumorNormal.out.severusFullOutput
 
     publish:
         phasedVcf >> "phased_vcf"
@@ -60,9 +60,16 @@ workflow {
               """.stripIndent()
     }
 
-    tumorNormalOntWorkflow(Channel.fromPath(params.reads_tumor), Channel.fromPath(params.reads_normal),
-                         Channel.fromPath(params.reference), Channel.fromPath(params.vntr),
-                         Channel.fromPath(params.clair3_model))
+    tumorChannel = Channel.fromPath(params.reads_tumor.split(" ").toList(), checkIfExists: true)
+    tumorChannel.collect().view{it -> "Tumor read files: $it"}
+
+    normalChannel = Channel.fromPath(params.reads_normal.split(" ").toList(), checkIfExists: true)
+    normalChannel.collect().view{it -> "Normal read files: $it"}
+
+    tumorNormalOntWorkflow(tumorChannel, normalChannel,
+                           Channel.fromPath(params.reference, checkIfExists: true), 
+                           Channel.fromPath(params.vntr, checkIfExists: true),
+                           Channel.fromPath(params.clair3_model, checkIfExists: true))
 }
 
 output {
