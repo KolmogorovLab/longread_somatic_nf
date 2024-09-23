@@ -38,13 +38,13 @@ workflow tumorNormalOntWorkflow {
         phasedVcf = callClair3.out.vcf
         haplotaggedTumor = haplotagTumor.out.bam
         haplotaggedNormal = haplotagNormal.out.bam
-        severusSomaticVcf = severusTumorNormal.out.severusSomaticVcf
+        severusFullOutput = severusTumorOnly.out.severusFullOutput
 
     publish:
         phasedVcf >> "phased_vcf"
         haplotaggedTumor >> "haplotagged_bam_tumor"
         haplotaggedNormal >> "haplotagged_bam_normal"
-        severusSomaticVcf >> "severus"
+        severusFullOutput >> "severus"
 }
 
 /*

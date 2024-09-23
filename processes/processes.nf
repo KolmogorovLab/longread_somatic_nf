@@ -129,6 +129,7 @@ process severusTumorOnly {
         path panelOfNormals
 
     output:
+        path 'severus_out/*', arity: '3..*', emit: severusFullOutput
         path 'severus_out/somatic_SVs/severus_somatic.vcf', emit: severusSomaticVcf
 
     script:
@@ -156,6 +157,7 @@ process severusTumorNormal {
         path vntrBed
 
     output:
+        path 'severus_out/*', arity: '3..*', emit: severusFullOutput
         path 'severus_out/somatic_SVs/severus_somatic.vcf', emit: severusSomaticVcf
 
     script:

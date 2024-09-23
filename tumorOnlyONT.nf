@@ -30,12 +30,12 @@ workflow tumorOnlyOntWorkflow {
     emit:
         phasedVcf = callClair3.out.vcf
         haplotaggedBam = haplotagWhatshap.out.bam
-        severusSomaticVcf = severusTumorOnly.out.severusSomaticVcf
+        severusFullOutput = severusTumorOnly.out.severusFullOutput
 
     publish:
         phasedVcf >> "phased_vcf"
         haplotaggedBam >> "haplotagged_bam"
-        severusSomaticVcf >> "severus"
+        severusFullOutput >> "severus"
 }
 
 /*
