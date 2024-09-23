@@ -3,7 +3,7 @@
 nextflow.enable.dsl = 2
 nextflow.preview.output = true
 
-include { callClair3; phaseLongphase; severusTumorNormal } from "./processes/processes.nf"
+include { callClair3; phaseLongphase; severusTumorNormal; wakhanTumorNormal } from "./processes/processes.nf"
 include { alignMinimap2 as alignTumor } from "./processes/processes.nf"
 include { alignMinimap2 as alignNormal } from "./processes/processes.nf"
 include { haplotagWhatshap as haplotagNormal } from "./processes/processes.nf"
@@ -33,18 +33,22 @@ workflow tumorNormalOntWorkflow {
         severusTumorNormal(haplotagTumor.out.bam, haplotagTumor.out.bam_idx, 
                            haplotagNormal.out.bam, haplotagNormal.out.bam_idx,
                            phaseLongphase.out.phasedVcf, vntrAnnotation)
+        wakhanTumorNormal(haplotagTumor.out.bam, haplotagTumor.out.bam_idx, reference, phaseLongphase.out.phasedVcf,
+                          severusTumorNormal.out.severusSomaticVcf)
 
     emit:
         phasedVcf = phaseLongphase.out.phasedVcf
         haplotaggedTumor = haplotagTumor.out.bam
         haplotaggedNormal = haplotagNormal.out.bam
         severusFullOutput = severusTumorNormal.out.severusFullOutput
+        wakhanFullOutput = wakhanTumorNormal.out.wakhanOutput
 
     publish:
         phasedVcf >> "phased_vcf"
         haplotaggedTumor >> "haplotagged_bam_tumor"
         haplotaggedNormal >> "haplotagged_bam_normal"
         severusFullOutput >> "severus"
+        wakhanFullOutput >> "wakhan"
 }
 
 /*

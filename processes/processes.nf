@@ -170,3 +170,57 @@ process severusTumorNormal {
             --vntr-bed ${vntrBed}
         """
 }
+
+process wakhanTumorOnly {
+    def threads = 8
+    def genomeName = "Sample"
+
+    container 'docker://mkolmogo/wakhan:dev_e3c495f'
+    cpus threads
+    memory '32 G'
+    time '4.h'
+
+    input:
+        path tumorBam, stageAs: "tumor.bam"
+        path tumorBamIdx, stageAs: "tumor.bam.bai"
+        path reference
+        path tumorSmallPhasedVcf
+        path severusSomaticVcf
+
+    output:
+        path 'wakhan_out/*', arity: '3..*', emit: wakhanOutput
+
+    script:
+        """
+        tabix ${tumorSmallPhasedVcf}
+        wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints severusSomaticVcf
+        """
+}
+
+process wakhanTumorNormal {
+    def threads = 8
+    def genomeName = "Sample"
+
+    container 'docker://mkolmogo/wakhan:dev_e3c495f'
+    cpus threads
+    memory '32 G'
+    time '4.h'
+
+    input:
+        path tumorBam, stageAs: "tumor.bam"
+        path tumorBamIdx, stageAs: "tumor.bam.bai"
+        path reference
+        path normalSmallPhasedVcf
+        path severusSomaticVcf
+
+    output:
+        path 'wakhan_out/*', arity: '3..*', emit: wakhanOutput
+
+    script:
+        """
+        tabix ${normalSmallPhasedVcf}
+        wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --normal-phased-vcf ${normalSmallPhasedVcf} \
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints severusSomaticVcf
+        """
+}
