@@ -28,7 +28,7 @@ workflow tumorOnlyOntWorkflow {
                          vntrAnnotation, svPanelOfNormals)
 
     emit:
-        phasedVcf = callClair3.out.vcf
+        phasedVcf = phaseLongphase.out.phasedVcf
         haplotaggedBam = haplotagWhatshap.out.bam
         severusFullOutput = severusTumorOnly.out.severusFullOutput
 

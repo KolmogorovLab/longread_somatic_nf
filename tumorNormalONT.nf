@@ -35,7 +35,7 @@ workflow tumorNormalOntWorkflow {
                            phaseLongphase.out.phasedVcf, vntrAnnotation)
 
     emit:
-        phasedVcf = callClair3.out.vcf
+        phasedVcf = phaseLongphase.out.phasedVcf
         haplotaggedTumor = haplotagTumor.out.bam
         haplotaggedNormal = haplotagNormal.out.bam
         severusFullOutput = severusTumorNormal.out.severusFullOutput
