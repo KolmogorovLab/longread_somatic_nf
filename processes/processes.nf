@@ -194,7 +194,7 @@ process wakhanTumorOnly {
         """
         tabix ${tumorSmallPhasedVcf}
         wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
-          --genome-name Sample --out-dir-plots wakhan_out --breakpoints severusSomaticVcf
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
         """
 }
 
@@ -221,6 +221,6 @@ process wakhanTumorNormal {
         """
         tabix ${normalSmallPhasedVcf}
         wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --normal-phased-vcf ${normalSmallPhasedVcf} \
-          --genome-name Sample --out-dir-plots wakhan_out --breakpoints severusSomaticVcf
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
         """
 }
