@@ -224,3 +224,64 @@ process wakhanTumorNormal {
           --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
         """
 }
+
+process deepsomaticTumorOnly {
+    def threads = 28
+    def genomeName = "Sample"
+    def outDir = "deepsomatic_out"
+
+    container 'docker://google/deepsomatic:1.7.0'
+    cpus threads
+    memory '128 G'
+    time '12.h'
+
+    input:
+        path tumorBam, stageAs: "tumor.bam"
+        path tumorBamIdx, stageAs: "tumor.bam.bai"
+        path reference
+        path referenceIdx
+
+    output:
+        path 'deepsomatic_out/*', arity: '3..*', emit: deepsomaticOutput
+
+    script:
+        """
+        mkdir ${outDir}
+        run_deepsomatic --model_type=ONT_TUMOR_ONLY --ref=${reference} --reads_tumor=${tumorBam} \
+          --output_vcf=${outDir}/deepsomatic.vcf.gz --sample_name_tumor=${genomeName} \
+          --num_shards=${threads} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate \
+          --use_default_pon_filtering=true
+        rm -r ${outDir}/intermediate
+        """
+}
+
+process deepsomaticTumorNormal {
+    def threads = 28
+    def genomeName = "Sample"
+    def outDir = "deepsomatic_out"
+
+    container 'docker://google/deepsomatic:1.7.0'
+    cpus threads
+    memory '128 G'
+    time '12.h'
+
+    input:
+        path tumorBam, stageAs: "tumor.bam"
+        path tumorBamIdx, stageAs: "tumor.bam.bai"
+        path normalBam, stageAs: "normal.bam"
+        path normalBamIdx, stageAs: "normal.bam.bai"
+        path reference
+        path referenceIdx
+
+    output:
+        path 'deepsomatic_out/*', arity: '3..*', emit: deepsomaticOutput
+
+    script:
+        """
+        mkdir ${outDir}
+        run_deepsomatic --model_type=ONT --ref=${reference} --reads_tumor=${tumorBam} --reads_normal=${normalBam} \
+          --output_vcf=${outDir}/deepsomatic.vcf.gz --sample_name_tumor=${genomeName}-T --sample_name_normal=${genomeName}-N \
+          --num_shards=${threads} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate
+        rm -r ${outDir}/intermediate
+        """
+}
