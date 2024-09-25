@@ -1,62 +1,45 @@
-# Nextflow Workflow: Long-Read Sequencing Analysis
+# Nextflow Workflow: Long-Read Somatic Variant Calling
 Nextflow processes contain a collection of scripts that perform alignment, small-Variant calling, and haplotagging.
-*Current version only runs tumor cells. Input of normal and tumor cells under development*
-*Extended pipeline with use of Severus and Wakhan under development*
 
-
-## Dependencies
-- Unix operating system
-- Bash 3.2
-- Java 11 or later
-
-
-## Install Nextflow
-1. Install Nextflow by copying and pasting the following snippet in your shell terminal: 
-
-```
-curl -fsSL get.nextflow.io | bash
-```
-
-It will download the 'nextflow' application launcher in your working directory.
-
-
-2. Make Nextflow executable:
-
-```
-chmod +x nextflow
-```  
-
-4. Move Nextflow into an executable path:
-
-```
-sudo mv nextflow /usr/local/bin
-```  
+Currently pipeline includes the following:
+* Alignment with minimap2
+* Small variant calling with Clair3
+* Phasing with longphase
+* Somatic SV calling with Severus
+* CNA calling with Wakhan
   
-6. Confirm that Nextflow is installed correctly:
+## Running on Biowulf/Slurm
+
+Note that the commands below need to be run either in interactive session, or using `sbatch`, but not on the head node. The nextflow engine automatically submits jobs via Slurm scheduler.
+
+### Tumor-normal version
 
 ```
-nextflow info 
+module load nextflow
+nextflow run tumorNormalONT.nf --reads_tumor TUMOR_BAM --reads_normal NORMAL_BAM --reference REF_FASTA --outdir NF_OUT --vntr VNTR_BED --clair3_model CLAIR3_MODEL
 ```
 
-## Inputs and Parameters
-The current version of the pipeline takes tumor-only long-read cell lines in bam format. The parameters of these `reads` and the reference file, `ref` are **required** parameters that must be specified at the command line. An example of the how the nextflow script can be run at the command line is below. 
+### Tumor-only version
 
 ```
-nextflow run masterPipeline.nf --reads reads.bam --ref reference.fasta
-
+module load nextflow
+nextflow run ~/projects/LongReadCancerPipeline/tumorOnlyONT.nf --reads READS_BAM --reference REF_FASTA --outdir NF_OUT --vntr VNTR_BED --sv_pon SEVERUS_PON --clair3_model CLAIR3_MODEL
 ```
 
-## Running Nextflow Pipeline
-The following files located in this repository are **required** to run the Long-Read Analysis Pipeline: 
-1. Either method below to run the pipeline
-    - `masterPipeline.nf` to run the pipeline directly through nextflow
-    - `slurmPipeline.sh` to run the nextflow pipeline through slurm
-2. Configuration file with established parameters, environment and container configurations
-   - `nextflow.config` 
+### Some caveats
 
-## Nextflow introduction
-https://training.nextflow.io/
+* Input reads are in (unmapped) bam format. You can specify multiple input files, but the whole argument needs to be wrapped in *single quotes* (`'`): `--reads_tumor 'BAM1 BAM2'`, or `reads_tumor 'BAM_DIR/*bam'`
+* If you are running multiple instances of nextflow (e.g. processing multiple samples), each instance needs to be run from *separate* working directory. This is because they create `work` folder for intermediate files and `.nextflow` logs.
+* If pipeline failed for some reason it can be restarted by adding `-resume` argument (note single dash). You can modify the pipeline and restart, and it will attemnt to reuse the results if possible. Restart should happen inside the same working directory.
 
-### Citations
-P. Di Tommaso, et al. Nextflow enables reproducible computational workflows. Nature Biotechnology 35, 316–319 (2017) doi:10.1038/nbt.3820
+## Resources to learn about Nextflow
 
+* Highly suggest to go over this introduction if this is your first time with Nextflow: https://training.nextflow.io/
+
+## Tips for developing/debugging
+
+* To run the pipeline locally, comment out `process.executor = 'slurm'` in the `nextflow.config` file
+* Nextflow will report running/completed jobs as follows `[11/4852c3] tumorOnlyOntWorkflow:alignMinimap2 (1) [  0%] 0 of 1`. You can find the associated files for this job at the (unique) working directory: `work/11/4852c3...`.
+* There, you'll see staged input files and everything that job output. There are also hidden files (start with `.`, use `ls -la` to show).
+* In the working dir: `.command.sh` shows the executed command line (run inside of singularity container). `.command.out` - stdout, `.command.err` - stderr.
+* Each process is run inside a singularity/docker container (referenced in the process definition). Build scripts for some of the custom docker containers are in `docker` folder.
