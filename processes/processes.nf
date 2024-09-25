@@ -194,7 +194,7 @@ process wakhanTumorOnly {
         """
         tabix ${tumorSmallPhasedVcf}
         wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
-          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf} --hets-ratio 0.25
         """
 }
 
