@@ -119,7 +119,7 @@ process haplotagWhatshap {
 process severusTumorOnly {
     def threads = 28
 
-    container 'docker://mkolmogo/severus:dev1.2'
+    container 'docker://mkolmogo/severus:dev_3cbd536'
     cpus threads
     memory '128 G'
     time '8.h'
@@ -146,7 +146,7 @@ process severusTumorOnly {
 process severusTumorNormal {
     def threads = 28
 
-    container 'docker://mkolmogo/severus:dev1.2'
+    container 'docker://mkolmogo/severus:dev_3cbd536'
     cpus threads
     memory '128 G'
     time '8.h'
