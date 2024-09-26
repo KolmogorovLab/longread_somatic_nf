@@ -69,10 +69,10 @@ workflow {
     }
 
     tumorChannel = Channel.fromPath(params.reads_tumor.split(" ").toList(), checkIfExists: true)
-    tumorChannel.collect().view{it -> "Tumor read files: $it"}
+    tumorChannel.view{it -> "Tumor reads: $it"}
 
     normalChannel = Channel.fromPath(params.reads_normal.split(" ").toList(), checkIfExists: true)
-    normalChannel.collect().view{it -> "Normal read files: $it"}
+    normalChannel.view{it -> "Normal reads: $it"}
 
     tumorNormalOntWorkflow(tumorChannel, normalChannel,
                            Channel.fromPath(params.reference, checkIfExists: true), 

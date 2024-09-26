@@ -59,7 +59,7 @@ workflow {
     }
 
     readsChannel = Channel.fromPath(params.reads.split(" ").toList(), checkIfExists: true)
-    readsChannel.collect().view{it -> "Input read files: $it"}
+    readsChannel.view{it -> "Input reads: $it"}
 
     tumorOnlyOntWorkflow(readsChannel, 
                          Channel.fromPath(params.reference, checkIfExists: true), 
