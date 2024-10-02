@@ -6,10 +6,9 @@ nextflow.enable.dsl = 2
  * Align reads using minimap2, sort BAM using samtools, and create BAM index
  */
 process alignMinimap2 {
-    def threads = 28
 
     container 'docker://quay.io/jmonlong/minimap2_samtools:v2.24_v1.16.1'
-    cpus threads
+    cpus 28
     memory '128 GB'
     time '24.h'
 
@@ -26,7 +25,7 @@ process alignMinimap2 {
         """  
         samtools cat ${reads} | \
           samtools fastq -TMm,Ml,MM,ML - | \
-          minimap2 -ax map-ont -k 17 -t ${threads} -K 1G -y --eqx ${ref} - | \
+          minimap2 -ax map-ont -k 17 -t ${task.cpus} -K 1G -y --eqx ${ref} - | \
           samtools sort -@4 -m 4G > aligned.bam
         samtools index -@8 aligned.bam
         samtools faidx ${ref}
@@ -34,10 +33,8 @@ process alignMinimap2 {
 }   
     
 process callClair3 {
-    def threads = 28
-
     container 'docker://hkubal/clair3:v1.0.10'
-    cpus threads
+    cpus 28
     memory '128 G'
     time '24.h'
 
@@ -57,7 +54,7 @@ process callClair3 {
         /opt/bin/run_clair3.sh \
             --bam_fn=${alignedBam} \
             --ref_fn=${reference} \
-            --threads=${threads} \
+            --threads=${task.cpus} \
             --platform="ont" \
             --model_path=${modelPath} \
             --output="clair3_output" \
@@ -65,10 +62,9 @@ process callClair3 {
 }
 
 process phaseLongphase {
-    def threads = 10
 
     container 'docker://mkolmogo/longphase:1.7.3'
-    cpus threads
+    cpus 10
     memory '64 G'
     time '4.h'
 
@@ -85,7 +81,7 @@ process phaseLongphase {
     
     script:
         """
-        longphase phase -s ${vcf} -b ${alignedBam} -r ${reference} -t ${threads} -o longphase --ont
+        longphase phase -s ${vcf} -b ${alignedBam} -r ${reference} -t ${task.cpus} -o longphase --ont
         bgzip longphase.vcf
         """
 }
@@ -117,10 +113,8 @@ process haplotagWhatshap {
 }
 
 process severusTumorOnly {
-    def threads = 28
-
     container 'docker://mkolmogo/severus:dev_3cbd536'
-    cpus threads
+    cpus 28
     memory '128 G'
     time '8.h'
 
@@ -138,16 +132,14 @@ process severusTumorOnly {
     script:
         """
         tabix ${phasedVcf}
-        severus --target-bam ${tumorBam} --out-dir severus_out -t ${threads} --phasing-vcf ${phasedVcf} \
+        severus --target-bam ${tumorBam} --out-dir severus_out -t ${task.cpus} --phasing-vcf ${phasedVcf} \
             --vntr-bed ${vntrBed} --PON ${panelOfNormals}
         """
 }
 
 process severusTumorNormal {
-    def threads = 28
-
     container 'docker://mkolmogo/severus:dev_3cbd536'
-    cpus threads
+    cpus 28
     memory '128 G'
     time '8.h'
 
@@ -166,17 +158,16 @@ process severusTumorNormal {
     script:
         """
         tabix ${phasedVcf}
-        severus --target-bam ${tumorBam} --control-bam ${normalBam} --out-dir severus_out -t ${threads} --phasing-vcf ${phasedVcf} \
+        severus --target-bam ${tumorBam} --control-bam ${normalBam} --out-dir severus_out -t ${task.cpus} --phasing-vcf ${phasedVcf} \
             --vntr-bed ${vntrBed}
         """
 }
 
 process wakhanTumorOnly {
-    def threads = 16
     def genomeName = "Sample"
 
     container 'docker://mkolmogo/wakhan:dev_e3c495f'
-    cpus threads
+    cpus 16
     memory '64 G'
     time '4.h'
 
@@ -193,17 +184,16 @@ process wakhanTumorOnly {
     script:
         """
         tabix ${tumorSmallPhasedVcf}
-        wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
+        wakhan --threads ${task.cpus} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
           --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf} --hets-ratio 0.25
         """
 }
 
 process wakhanTumorNormal {
-    def threads = 16
     def genomeName = "Sample"
 
     container 'docker://mkolmogo/wakhan:dev_e3c495f'
-    cpus threads
+    cpus 16
     memory '64 G'
     time '4.h'
 
@@ -220,20 +210,20 @@ process wakhanTumorNormal {
     script:
         """
         tabix ${normalSmallPhasedVcf}
-        wakhan --threads ${threads} --reference ${reference} --target-bam ${tumorBam} --normal-phased-vcf ${normalSmallPhasedVcf} \
+        wakhan --threads ${task.cpus} --reference ${reference} --target-bam ${tumorBam} --normal-phased-vcf ${normalSmallPhasedVcf} \
           --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
         """
 }
 
 process deepsomaticTumorOnly {
-    def threads = 28
     def genomeName = "Sample"
     def outDir = "deepsomatic_out"
 
     container 'docker://google/deepsomatic:1.7.0'
-    cpus threads
-    memory '128 G'
-    time '12.h'
+    cpus 56
+    memory '240 G'
+    time '48.h'
+    clusterOptions '--exclusive'
 
     input:
         path tumorBam, stageAs: "tumor.bam"
@@ -242,28 +232,23 @@ process deepsomaticTumorOnly {
         path referenceIdx
 
     output:
-        path 'deepsomatic_out/*', arity: '3..*', emit: deepsomaticOutput
+        path 'deepsomatic_out/ds.merged.vcf.gz', emit: deepsomaticOutput
 
     script:
         """
-        mkdir ${outDir}
-        run_deepsomatic --model_type=ONT_TUMOR_ONLY --ref=${reference} --reads_tumor=${tumorBam} \
-          --output_vcf=${outDir}/deepsomatic.vcf.gz --sample_name_tumor=${genomeName} \
-          --num_shards=${threads} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate \
-          --use_default_pon_filtering=true
-        rm -r ${outDir}/intermediate
+        ds_parallel_tumor_only.sh ${tumorBam} ${reference} ${outDir} ${genomeName}
         """
 }
 
 process deepsomaticTumorNormal {
-    def threads = 28
+    container 'docker://google/deepsomatic:1.7.0'
+    cpus 56
+    memory '240 G'
+    time '48.h'
+    clusterOptions '--exclusive'
+
     def genomeName = "Sample"
     def outDir = "deepsomatic_out"
-
-    container 'docker://google/deepsomatic:1.7.0'
-    cpus threads
-    memory '128 G'
-    time '12.h'
 
     input:
         path tumorBam, stageAs: "tumor.bam"
@@ -278,10 +263,14 @@ process deepsomaticTumorNormal {
 
     script:
         """
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        ulimit -u 10240 -n 16384
+
         mkdir ${outDir}
         run_deepsomatic --model_type=ONT --ref=${reference} --reads_tumor=${tumorBam} --reads_normal=${normalBam} \
           --output_vcf=${outDir}/deepsomatic.vcf.gz --sample_name_tumor=${genomeName}-T --sample_name_normal=${genomeName}-N \
-          --num_shards=${threads} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate
+          --num_shards=${task.cpus} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate
         rm -r ${outDir}/intermediate
         """
 }
