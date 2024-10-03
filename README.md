@@ -7,6 +7,7 @@ Currently pipeline includes the following:
 * Phasing with longphase
 * Somatic SV calling with Severus
 * CNA calling with Wakhan
+* Somatic small variant calling with DeepSomatic
   
 ## Running on Biowulf/Slurm
 
