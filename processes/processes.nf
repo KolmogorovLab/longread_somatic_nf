@@ -259,18 +259,10 @@ process deepsomaticTumorNormal {
         path referenceIdx
 
     output:
-        path 'deepsomatic_out/*', arity: '3..*', emit: deepsomaticOutput
+        path 'deepsomatic_out/ds.merged.vcf.gz', emit: deepsomaticOutput
 
     script:
         """
-        export OMP_NUM_THREADS=1
-        export OPENBLAS_NUM_THREADS=1
-        ulimit -u 10240 -n 16384
-
-        mkdir ${outDir}
-        run_deepsomatic --model_type=ONT --ref=${reference} --reads_tumor=${tumorBam} --reads_normal=${normalBam} \
-          --output_vcf=${outDir}/deepsomatic.vcf.gz --sample_name_tumor=${genomeName}-T --sample_name_normal=${genomeName}-N \
-          --num_shards=${task.cpus} --logging_dir=${outDir}/logs --intermediate_results_dir=${outDir}/intermediate
-        rm -r ${outDir}/intermediate
+        ds_parallel_tumor_normal.sh ${tumorBam} ${normalBam} ${reference} ${outDir} ${genomeName}-T ${genomeName}-N
         """
 }
