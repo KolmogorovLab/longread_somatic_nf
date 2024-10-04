@@ -1,7 +1,10 @@
 #!/bin/bash
 set -eu
 
-###Script for running DeepSomatic tumor-only on CPU, slurm exlusive instance
+###Script for running DeepSomatic tumor-only on CPU
+###Inteded to run inside the DeepSomatic Docker/Singularity container: google/deepsomatic:1.7.0
+###e.g. singularity run -B /data deepsomatic_1.7.0.sif ./ds_paralel_tumor_normal.sh ARGS
+###Should be submitted to exlusive Slurm instance (by adding --exclusive to the submission command)
 
 if [ "$#" -ne 6 ]; then
     echo "Usage ds_parallel_tumor_only.sh reads_tumor reads_normal reference_fasta out_dir tumor_sample normal_sample"
