@@ -133,7 +133,7 @@ process severusTumorOnly {
         """
         tabix ${phasedVcf}
         severus --target-bam ${tumorBam} --out-dir severus_out -t ${task.cpus} --phasing-vcf ${phasedVcf} \
-            --vntr-bed ${vntrBed} --PON ${panelOfNormals}
+            --vntr-bed ${vntrBed} --PON ${panelOfNormals} --min-reference-flank 0 --single-bp --resolve-overlaps --max-unmapped-seq 7000 --between-junction-ins 
         """
 }
 
@@ -159,7 +159,7 @@ process severusTumorNormal {
         """
         tabix ${phasedVcf}
         severus --target-bam ${tumorBam} --control-bam ${normalBam} --out-dir severus_out -t ${task.cpus} --phasing-vcf ${phasedVcf} \
-            --vntr-bed ${vntrBed}
+            --vntr-bed ${vntrBed} --single-bp --resolve-overlaps --max-unmapped-seq 7000 --between-junction-ins 
         """
 }
 
@@ -180,6 +180,7 @@ process wakhanTumorOnly {
 
     output:
         path 'wakhan_out/*', arity: '3..*', emit: wakhanOutput
+        path 'wakhan_out/phasing_output/Sample.rephased.vcf.gz', emit: rephasedVcf
 
     script:
         """
