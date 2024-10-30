@@ -166,7 +166,7 @@ process severusTumorNormal {
 process wakhanTumorOnly {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_e3c495f'
+    container 'docker://mkolmogo/wakhan:dev_2be53eb'
     cpus 16
     memory '64 G'
     time '4.h'
@@ -186,14 +186,14 @@ process wakhanTumorOnly {
         """
         tabix ${tumorSmallPhasedVcf}
         wakhan --threads ${task.cpus} --reference ${reference} --target-bam ${tumorBam} --tumor-vcf ${tumorSmallPhasedVcf} \
-          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf} --hets-ratio 0.25
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf} --hets-ratio 0.25 --ploidy-range 1-6
         """
 }
 
 process wakhanTumorNormal {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_e3c495f'
+    container 'docker://mkolmogo/wakhan:dev_2be53eb'
     cpus 16
     memory '64 G'
     time '4.h'
@@ -212,7 +212,7 @@ process wakhanTumorNormal {
         """
         tabix ${normalSmallPhasedVcf}
         wakhan --threads ${task.cpus} --reference ${reference} --target-bam ${tumorBam} --normal-phased-vcf ${normalSmallPhasedVcf} \
-          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf}
+          --genome-name Sample --out-dir-plots wakhan_out --breakpoints ${severusSomaticVcf} --ploidy-range 1-6
         """
 }
 
