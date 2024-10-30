@@ -41,7 +41,9 @@ workflow tumorNormalOntWorkflow {
     emit:
         phasedVcf = phaseLongphase.out.phasedVcf
         haplotaggedTumor = haplotagTumor.out.bam
+        haplotaggedTumorIdx = haplotagTumor.out.bam_idx
         haplotaggedNormal = haplotagNormal.out.bam
+        haplotaggedNormalIdx = haplotagNormal.out.bam_idx
         severusFullOutput = severusTumorNormal.out.severusFullOutput
         wakhanFullOutput = wakhanTumorNormal.out.wakhanOutput
         deepsomaticOutput = deepsomaticTumorNormal.out.deepsomaticOutput
@@ -49,7 +51,9 @@ workflow tumorNormalOntWorkflow {
     publish:
         phasedVcf >> "phased_vcf"
         haplotaggedTumor >> "haplotagged_bam_tumor"
+        haplotaggedTumorIdx >> "haplotagged_bam_tumor"
         haplotaggedNormal >> "haplotagged_bam_normal"
+        haplotaggedNormalIdx >> "haplotagged_bam_normal"
         severusFullOutput >> "severus"
         wakhanFullOutput >> "wakhan"
         deepsomaticOutput >> "deepsomatic"
