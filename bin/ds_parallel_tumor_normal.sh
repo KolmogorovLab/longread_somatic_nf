@@ -45,17 +45,17 @@ ulimit -u 10240 -n 16384
 time seq 0 $((EXAMPLES_THREADS - 1)) | parallel -j ${EXAMPLES_THREADS} -q --halt 2 --line-buffer /opt/deepvariant/bin/make_examples_somatic \
     --mode calling --ref "${REF}" --reads_tumor "${READS_TUMOR}" --reads_normal "${READS_NORMAL}" \
     --examples "${EXAMPLES}/make_examples_somatic.tfrecord@${EXAMPLES_THREADS}.gz" \
-    --checkpoint "/opt/models/deepsomatic/ont" --alt_aligned_pileup "diff_channels" \
+    --checkpoint "/opt/models/deepsomatic/pacbio" --alt_aligned_pileup "diff_channels" \
     --min_mapping_quality "5" --parse_sam_aux_fields --partition_size "25000" --phase_reads \
     --pileup_image_width "99" --norealign_reads --sample_name_normal "${NORMAL_SAMPLE}" \
     --sample_name_tumor "${TUMOR_SAMPLE}" --sort_by_haplotypes --track_ref_reads \
-    --trim_reads_for_pileup --vsc_max_fraction_indels_for_non_target_sample "0.6" \
-    --vsc_max_fraction_snps_for_non_target_sample "0.6" --vsc_min_fraction_indels "0.1" --vsc_min_fraction_snps "0.05" --task {}
+    --trim_reads_for_pileup --vsc_max_fraction_indels_for_non_target_sample "0.5" \
+    --vsc_max_fraction_snps_for_non_target_sample "0.5" --vsc_min_fraction_indels "0.1" --vsc_min_fraction_snps "0.02" --vsc_min_count_snps "1" --task {}
 
 #call variants
 parallel --plus -j ${TF_JOBS} /opt/deepvariant/bin/call_variants \
     --outfile "${VAR_OUT}/call_variants_output_{0#}.tfrecord.gz" \
-    --examples {} --checkpoint "/opt/models/deepsomatic/ont" \
+    --examples {} --checkpoint "/opt/models/deepsomatic/pacbio" \
     ::: `find "${EXAMPLES}" -name "make_examples*.gz"`
 
 #postprocess variants

@@ -25,7 +25,7 @@ process alignMinimap2 {
         """  
         samtools cat ${reads} | \
           samtools fastq -TMm,Ml,MM,ML - | \
-          minimap2 -ax map-ont -k 17 -t ${task.cpus} -K 1G -y --eqx ${ref} - | \
+          minimap2 -ax map-hifi -t ${task.cpus} -K 1G -y --eqx ${ref} - | \
           samtools sort -@4 -m 4G > aligned.bam
         samtools index -@8 aligned.bam
         samtools faidx ${ref}
@@ -55,8 +55,8 @@ process callClair3 {
             --bam_fn=${alignedBam} \
             --ref_fn=${reference} \
             --threads=${task.cpus} \
-            --platform="ont" \
-            --model_path=${modelPath} \
+            --platform="hifi" \
+            --model_path=/opt/models/hifi_revio \
             --output="clair3_output" \
         """
 }
@@ -81,7 +81,7 @@ process phaseLongphase {
     
     script:
         """
-        longphase phase -s ${vcf} -b ${alignedBam} -r ${reference} -t ${task.cpus} -o longphase --ont
+        longphase phase -s ${vcf} -b ${alignedBam} -r ${reference} -t ${task.cpus} -o longphase --pb
         bgzip longphase.vcf
         """
 }
