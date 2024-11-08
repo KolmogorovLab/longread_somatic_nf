@@ -19,8 +19,9 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.15/samtools-1.
 	make && \
 	cp samtools /usr/bin/samtools
 
-RUN git clone -b ayse_dev https://github.com/KolmogorovLab/Severus && \
+RUN git clone https://github.com/KolmogorovLab/Severus && \
     cd Severus && \
+    git checkout 82e7c0b && \
     python3 setup.py install
 
 RUN pip3 install networkx>=2.6 pydot matplotlib biopython biopython pysam plotly
