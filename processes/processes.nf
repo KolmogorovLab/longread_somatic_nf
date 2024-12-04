@@ -166,7 +166,7 @@ process severusTumorNormal {
 process wakhanTumorOnly {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_885c7e2'
+    container 'docker://mkolmogo/wakhan:dev_c717baa'
     cpus 16
     memory '64 G'
     time '4.h'
@@ -193,7 +193,7 @@ process wakhanTumorOnly {
 process wakhanTumorNormal {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_885c7e2'
+    container 'docker://mkolmogo/wakhan:dev_c717baa'
     cpus 16
     memory '64 G'
     time '4.h'
