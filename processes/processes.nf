@@ -113,7 +113,7 @@ process haplotagWhatshap {
 }
 
 process severusTumorOnly {
-    container 'docker://mkolmogo/severus:dev_82e7c0b'
+    container 'docker://gokcekeskus/severus:v_13'
     cpus 28
     memory '128 G'
     time '8.h'
@@ -138,7 +138,7 @@ process severusTumorOnly {
 }
 
 process severusTumorNormal {
-    container 'docker://mkolmogo/severus:dev_82e7c0b'
+    container 'docker://gokcekeskus/severus:v_13'
     cpus 28
     memory '128 G'
     time '8.h'
@@ -166,7 +166,7 @@ process severusTumorNormal {
 process wakhanTumorOnly {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_c717baa'
+    container 'docker://gokcekeskus/wakhan:dev_5cd31f5b'
     cpus 16
     memory '64 G'
     time '4.h'
@@ -193,7 +193,7 @@ process wakhanTumorOnly {
 process wakhanTumorNormal {
     def genomeName = "Sample"
 
-    container 'docker://mkolmogo/wakhan:dev_c717baa'
+    container 'docker://gokcekeskus/wakhan:dev_5cd31f5b'
     cpus 16
     memory '64 G'
     time '4.h'

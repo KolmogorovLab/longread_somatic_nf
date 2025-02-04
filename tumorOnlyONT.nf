@@ -41,19 +41,21 @@ workflow tumorOnlyOntWorkflow {
 
     emit:
         phasedVcf = phaseLongphase.out.phasedVcf
-        haplotaggedBam = haplotagWhatshap2.out.bam
-        haplotaggedBamidx = haplotagWhatshap2.out.bam_idx
-        severusFullOutput = severusTumorOnly2.out.severusFullOutput
-        wakhanFullOutput = wakhanTumorOnly.out.wakhanOutput
-        deepsomaticOutput = deepsomaticTumorOnly.out.deepsomaticOutput
+	rephasedVcf = wakhanTumorOnly.out.rephasedVcf
+	haplotaggedBam = haplotagWhatshap2.out.bam
+	haplotaggedBamidx = haplotagWhatshap2.out.bam_idx
+	severusFullOutput = severusTumorOnly2.out.severusFullOutput
+	wakhanFullOutput = wakhanTumorOnly.out.wakhanOutput
+	deepsomaticOutput = deepsomaticTumorOnly.out.deepsomaticOutput
 
     publish:
         phasedVcf >> "phased_vcf"
-        haplotaggedBam >> "haplotagged_bam"
-        haplotaggedBamidx >> "haplotagged_bam"
-        severusFullOutput >> "severus"
-        wakhanFullOutput >> "wakhan"
-        deepsomaticOutput >> "deepsomatic"
+	rephasedVcf >> "rephased_vcf"
+	haplotaggedBam >> "haplotagged_bam"
+	haplotaggedBamidx >> "haplotagged_bam"
+	severusFullOutput >> "severus"
+	wakhanFullOutput >> "wakhan"
+	deepsomaticOutput >> "deepsomatic"
 }
 
 /*
@@ -64,7 +66,7 @@ workflow {
         !params.vntr || !params.sv_pon || !params.clair3_model) {
         error """
               ERROR: Some required arguments are not defined.
-              Usage: tumorOnlyONT.nf --reads PATH --reference PATH --outdir PATH 
+              Usage: tumorOnlyONT.nf --reads PATH --reference PATH --outdir PATH
                                      --vntr PATH --sv_pon PATH --clair3_model PATH
               """.stripIndent()
     }
@@ -83,3 +85,4 @@ output {
     directory params.outdir
     mode "copy"
 }
+
