@@ -33,6 +33,6 @@ RUN pip3 install pysam pyfaidx numpy pandas plotly ruptures scikit-learn==1.2.0 
 
 WORKDIR /opt/wakhan
 RUN git clone https://github.com/KolmogorovLab/Wakhan && \
-    cd Wakhan && git checkout bc05672 && \
+    cd Wakhan && git checkout 02060ae && \
     echo '#!/bin/bash\npython3 /opt/wakhan/Wakhan/wakhan.py "$@"' > /usr/bin/wakhan && \
     chmod +x /usr/bin/wakhan
